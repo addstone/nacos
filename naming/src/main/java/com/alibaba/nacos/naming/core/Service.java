@@ -17,8 +17,10 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.consistency.KeyBuilder;
 import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteEventListener;
@@ -31,14 +33,12 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.naming.selector.NoneSelector;
-import com.alibaba.nacos.naming.selector.Selector;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.ListUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,6 +47,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Service of Nacos server side
@@ -251,9 +252,9 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
                 }
                 
                 if (!clusterMap.containsKey(instance.getClusterName())) {
-                    Loggers.SRV_LOG
-                            .warn("cluster: {} not found, ip: {}, will create new cluster with default configuration.",
-                                    instance.getClusterName(), instance.toJson());
+                    Loggers.SRV_LOG.warn(
+                            "cluster: {} not found, ip: {}, will create new cluster with default configuration.",
+                            instance.getClusterName(), instance.toJson());
                     Cluster cluster = new Cluster(instance.getClusterName(), this);
                     cluster.init();
                     getClusterMap().put(instance.getClusterName(), cluster);
@@ -498,9 +499,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         }
         
         if (getProtectThreshold() != vDom.getProtectThreshold()) {
-            Loggers.SRV_LOG
-                    .info("[SERVICE-UPDATE] service: {}, protectThreshold: {} -> {}", getName(), getProtectThreshold(),
-                            vDom.getProtectThreshold());
+            Loggers.SRV_LOG.info("[SERVICE-UPDATE] service: {}, protectThreshold: {} -> {}", getName(),
+                    getProtectThreshold(), vDom.getProtectThreshold());
             setProtectThreshold(vDom.getProtectThreshold());
         }
         
@@ -511,8 +511,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         }
         
         if (enabled != vDom.getEnabled().booleanValue()) {
-            Loggers.SRV_LOG
-                    .info("[SERVICE-UPDATE] service: {}, enabled: {} -> {}", getName(), enabled, vDom.getEnabled());
+            Loggers.SRV_LOG.info("[SERVICE-UPDATE] service: {}, enabled: {} -> {}", getName(), enabled,
+                    vDom.getEnabled());
             enabled = vDom.getEnabled();
         }
         
@@ -546,10 +546,11 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         List<Instance> ips = allIPs();
         
         StringBuilder ipsString = new StringBuilder();
-        ipsString.append(getServiceString());
+        String serviceString = getServiceString();
+        ipsString.append(serviceString);
         
         if (Loggers.SRV_LOG.isDebugEnabled()) {
-            Loggers.SRV_LOG.debug("service to json: " + getServiceString());
+            Loggers.SRV_LOG.debug("service to json: " + serviceString);
         }
         
         if (CollectionUtils.isNotEmpty(ips)) {
@@ -557,8 +558,8 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
         }
         
         for (Instance ip : ips) {
-            String string = ip.getIp() + ":" + ip.getPort() + "_" + ip.getWeight() + "_" + ip.isHealthy() + "_" + ip
-                    .getClusterName();
+            String string = ip.getIp() + ":" + ip.getPort() + "_" + ip.getWeight() + "_" + ip.isHealthy() + "_"
+                    + ip.getClusterName();
             ipsString.append(string);
             ipsString.append(',');
         }
@@ -609,9 +610,13 @@ public class Service extends com.alibaba.nacos.api.naming.pojo.Service implement
      * @throws IllegalArgumentException if service is not validate
      */
     public void validate() {
-        if (!getName().matches(SERVICE_NAME_SYNTAX)) {
+        String serviceName = getName();
+        if (Objects.isNull(serviceName)) {
+            throw new IllegalArgumentException("service name can not be null!");
+        }
+        if (!serviceName.matches(SERVICE_NAME_SYNTAX)) {
             throw new IllegalArgumentException(
-                    "dom name can only have these characters: 0-9a-zA-Z-._:, current: " + getName());
+                    "dom name can only have these characters: 0-9a-zA-Z-._:, current: " + serviceName);
         }
         for (Cluster cluster : clusterMap.values()) {
             cluster.validate();

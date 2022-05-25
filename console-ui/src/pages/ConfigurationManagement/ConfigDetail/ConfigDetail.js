@@ -226,7 +226,7 @@ class ConfigDetail extends React.Component {
     let self = this;
     const { locale = {} } = this.props;
     let leftvalue = this.monacoEditor.getValue();
-    let url = `v1/cs/history/previous?id=${this.valueMap.normal.id}`;
+    let url = `v1/cs/history/previous?id=${this.valueMap.normal.id}&dataId=${this.dataId}&group=${this.group}`;
     request({
       url,
       beforeSend() {
@@ -368,7 +368,7 @@ class ConfigDetail extends React.Component {
               <Input htmlType={'text'} readOnly {...init('md5')} />
             </FormItem>
             <FormItem label={locale.configuration} required>
-              <div className={editorClass} id="container" style={{ height: 500 }} />
+              <div className={editorClass} id="container" style={{ minHeight: 500 }} />
             </FormItem>
           </Form>
           <Row>

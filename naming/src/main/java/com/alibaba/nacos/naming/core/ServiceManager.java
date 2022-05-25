@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.cluster.Member;
@@ -43,11 +44,9 @@ import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.google.common.collect.Sets;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -771,7 +770,7 @@ public class ServiceManager implements RecordListener<Service> {
         
         List<Instance> currentIPs = service.allIPs(ephemeral);
         Map<String, Instance> currentInstances = new HashMap<>(currentIPs.size());
-        Set<String> currentInstanceIds = Sets.newHashSet();
+        Set<String> currentInstanceIds = CollectionUtils.set();
         
         for (Instance instance : currentIPs) {
             currentInstances.put(instance.toIpAddr(), instance);
@@ -842,10 +841,11 @@ public class ServiceManager implements RecordListener<Service> {
     }
     
     public Service getService(String namespaceId, String serviceName) {
-        if (serviceMap.get(namespaceId) == null) {
+        Map<String, Service> service = this.serviceMap.get(namespaceId);
+        if (service == null) {
             return null;
         }
-        return chooseServiceMap(namespaceId).get(serviceName);
+        return service.get(serviceName);
     }
     
     public boolean containService(String namespaceId, String serviceName) {
